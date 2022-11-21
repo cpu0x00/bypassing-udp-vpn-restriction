@@ -1,5 +1,5 @@
 ''' 
-Author: Karim (github.com/mr-nobody20) (twitter.com/fsociety_py00)
+Author: Karim (github.com/cpu0x00) (twitter.com/fsociety_py00)
 
 automation script to automate the process of:
 
@@ -26,7 +26,7 @@ API_TOKEN = 'YOUR_DIGITALOCEAN_API_HERE' # the personal access token
 SSH_PUB_KEY = f'{getcwd()}/tmp_idrsa.pub'
 DROPLET_ID = []
 PUBLIC_V4 = []
-OPENVPN_SETUP_SCRIPT = 'https://raw.githubusercontent.com/mr-nobody20/bypassing-udp-vpn-restriction/main/openvpn-automated-install.sh'
+OPENVPN_SETUP_SCRIPT = 'https://raw.githubusercontent.com/cpu0x00/bypassing-udp-vpn-restriction/main/openvpn-automated-install.sh'
 
 #-------------- droplet specifications section --------------#
 

@@ -132,16 +132,20 @@ SECOND:
 	
 	- it doesn't have my tools and configurations that i have on my own machine, setting it up would require exceptionally long time
 
-	- you can destroy the openvpn vps and build another one in minutes or even with an automation script so you don't get charged for the vps the time you are not using it ;), but destroying a for-hacking vps and building it again you guessed it, is no fun at all |:
+	- you can destroy the openvpn vps and build another one in minutes or even with an automation script so you don't get charged for the vps the time you are not using it ;), but destroying a for-hacking vps and building it again you guessed it, is no fun at all |:,  thats why we have automation right?!
+
 
 
 
 ## automation scripts ##
 
-- the python scripts aims to automate the process that i took to create and connect and destroy the droplet which means it only works with digital ocean and the digital ocean api key of your account
+- requirments `python3 -m pip install digitalocean paramiko requests boto3`
 
-- the (automate) script only supports (The Second Method) when you run the script it will automate:
-	
+
+### DigitalOcean
+
+- the (create_as_server.py) script only supports (The Second Method) when you run the script it will automate:
+		
 	- creating and adding ssh-keys to the digitalocean account 
 	- creating a vm in the cloud in digitalocean with the created keys
 	- downloading and creating an openvpn access server on the created droplet
@@ -160,19 +164,52 @@ SECOND:
 	- its there in case something gone wrong with the automate script so destroying the stuff wouldn't take much time
 
 
-- the (automate.py) script does it all in one time don't use the (automate_destroy.py) unless needed  
+- the (create_as_server.py) script does it all in one time don't use the (automate_destroy.py) unless needed  
 
 
 - the (openvpn-automated-install.sh) is just an edited version of (Nyr's) <a href="https://github.com/Nyr/openvpn-install"> openvpn-install</a> script , credit for <a href="https://github.com/Nyr">Nyr</a> for making this amazing script
 
 
-- change this variable to your digitalocean api key in both python scripts: (API_TOKEN) 
+- change this variable to your digitalocean api key in both python scripts: (API_TOKEN)  in the digitalocean folder
+
+
+### AWS
+
+- the (create_as_server_aws.py) supports two modes, the first one which is probably gonna be ran once which is the --setup `python3 create_as_server_aws.py --setup` this mode does 3 things:
+	- creates ssh keys that will be used in the future
+	- imports the keys into your aws account
+	- creates the needed security groups for the machine to work
+- once done you don't need to run the setup again (unless for a new aws account) 
+
+- the script automates the following (normal mode `python3 create_as_server_aws.py`):
+	- creates an aws t2.nano instance and configures it with the imported ssh-keys and the created security groups
+	- downloads the (openvpn-automated-install.sh) to the machine
+	- sets up the openvpn server 
+	- downloads the openvpn client to your localmachine
+	- re-writes the openvpn client to make it usable
+	- connects with the downloaded openvpn client to the created OpenVpn access server
+	- terminates the EC2 instance once pressed CTRL-C
+
+- you need to replace those variables with your own keys from your aws account: (ec2_ak, ec2_sak) 
+	- ec2_ak = AccessKey
+	- ec2_sak = SecurityAccessKeys 
+- how to get the keys?!  <a href="https://www.geeksforgeeks.org/launching-aws-ec2-instance-using-python/"> Geek For Geeks</a> have you covered ;) (AWS account with privileges) part
+
+- the aws method doesn't have an (automate_destroy) so if something gone wrong you gonna need to log-in to your aws and terminate the instance yourself 
+
+
 
 ## costs ##
 
-from digital ocean i used debian-11 with shared cpu and regular with ssd the second cheapest machine (6$/mo) 
+### DigitalOcean
 
-my usage is per hour and i destroy it after i finish so it cost per hour:
+-from digital ocean i used debian-11 with shared cpu and regular with ssd the second cheapest machine (6$/mo) 
 
-0.009$/hour = 0.216$/day (even if you gonna go crazy and hack for 24 hours straight it still pretty damn good ;) 
+- my usage is per hour and i destroy it after i finish so it cost per hour:
+	
+- 0.009$/hour = 0.216$/day (even if you gonna go crazy and hack for 24 hours straight it still pretty damn good ;) 
 
+### AWS
+
+- FREE for 12 MONTH
+- 0.0069$/h after the first year 

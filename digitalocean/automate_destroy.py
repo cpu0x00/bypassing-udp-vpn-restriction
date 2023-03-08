@@ -17,7 +17,7 @@ import re
 from os import getcwd
 from os import environ
 
-API_TOKEN = 'dop_v1_ee30b01024838298628184cecfa787d8c455cbd9ddd7e3b939271bced84f25a7' # personal access token 
+API_TOKEN = 'ACCESS_TOKEN_HERE' # personal access token 
 
 
 def destroy_droplet(): # destroys the created vps 

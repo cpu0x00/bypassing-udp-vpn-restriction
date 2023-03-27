@@ -1,18 +1,7 @@
-'''
-Author: Karim (github.com/cpu0x00) (twitter.com/fsociety_py00)
-
-automation script to automate the process of:
-	
-	- creating and adding ssh-keys to the digitalocean account 
-	- creating a vm in the cloud in digitalocean with the created keys
-	- downloading and creating an openvpn access server on the created droplet
-	- connecting the machine with the created openvpn server 
-	- destroying everything once the script is closed by user
-
-'''
 import boto3
 from os import system
 from os import getcwd
+import base64
 from time import sleep
 import argparse
 import threading
@@ -20,17 +9,60 @@ import paramiko
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--setup', action='store_true', help='sets up the account to be ready for usage')
-
+parser.add_argument('--socks_server', action='store_true', help="don't create a vpn server create a socks-proxy server on localhost:1080 ")
+parser.add_argument('--region', help='region to use (default=eu-central-1 [Frankfurt - Germany])')
+parser.add_argument('--sshkey', help='ssh key (KEY.pub) to import to account in the setup (default=will generate new ones)')
 
 args = parser.parse_args()
 
+ami_by_region = { # all EC2 debian 11 AMIs from debian website
+	
+	'af-south-1': 'ami-0c285a71c36f26bd2',
+	'ap-east-1' : 'ami-01384c3926bc6f380',
+	'ap-northeast-1' : 'ami-0b709072dd76c326e',
+	'ap-northeast-2' : 'ami-055437ee4dcf92427',
+	'ap-northeast-3': 'ami-0f5ac783bf46945a1',
+	'ap-south-1':  'ami-0b156a71992057092',
+	'ap-south-2':   'ami-089bf776cdb434015',
+	'ap-southeast-1': 'ami-04bc6caca307e18da',
+	'ap-southeast-2':  'ami-0ae7767061c20b57f',
+	'ap-southeast-3': 'ami-0df88c65a111b21eb',
+	'ap-southeast-4'  : 'ami-05cc01f6bf715d472',
+	'ca-central-1':  'ami-08413dce74940e624',
+	'eu-central-1': 'ami-08f13e5792295e1b2',
+	'eu-central-2': 'ami-07c6047d4a3831c31',
+	'eu-north-1': 'ami-02c68996dd3d909c1',
+	'eu-south-1': 'ami-0d9183c446561f116',
+	'eu-south-2': 'ami-05723ebd673e27701',
+	'eu-west-1': 'ami-089f338f3a2e69431',
+	'eu-west-2': 'ami-0d93d81bb4899d4cf',
+	'eu-west-3': 'ami-05bfef86a955a699e',
+	'me-central-1':  'ami-00da1ffc7abb2b4e4',
+	'me-south-1':  'ami-048569764020d86d8',
+	'sa-east-1':'ami-0226d6a40fd39e105',
+	'us-east-1':  'ami-0fec2c2e2017f4e7b',
+	'us-east-2':  'ami-0f35413f664528e13',
+	'us-west-1':  'ami-0bf166b48bbe2bf7c',
+	'us-west-2':  'ami-0c1b4dff690b5d229',
+}
 
-ec2_ak = 'YOUR_ACCESS_KEY_HERE'
-ec2_sak = 'YOUR_SECRET_ACCESS_KEY_HERE' 
+REGION = 'eu-central-1'
 
-image_id = "ami-0bf166b48bbe2bf7c" # debian
+if args.region:
+	REGION = args.region
 
-ec2 = boto3.client('ec2', 'us-west-1', aws_access_key_id=ec2_ak, aws_secret_access_key=ec2_sak)
+
+
+ec2_ak = 'YOUR_ACCESS_KEY'
+ec2_sak = 'YOUR_SECRET_ACCESS_KEY' 
+
+# image_id = "ami-0bf166b48bbe2bf7c" # debian for us-east-1
+# image_id = "ami-08f13e5792295e1b2" # debian for eu-central-1
+
+image_id = ami_by_region[REGION]
+
+ec2 = boto3.client('ec2', REGION, aws_access_key_id=ec2_ak, aws_secret_access_key=ec2_sak)
+print(f'[*] connected to {REGION} region')
 
 def create_keys():
 	print('[*] generating ssh keypair (aws_rsa)')
@@ -38,7 +70,12 @@ def create_keys():
 	print('[*] done')
 	
 def importsshkey():
-	SSH_PUBKEYFILE = f'{getcwd()}/aws_rsa.pub'
+	if args.sshkey:
+		print(f'[*] using existings public ssh key: {args.sshkey}')
+		SSH_PUBKEYFILE = f'{getcwd()}/{args.sshkey}'
+	else:
+		SSH_PUBKEYFILE = f'{getcwd()}/aws_rsa.pub'
+
 	readfile = open(SSH_PUBKEYFILE, 'r').readlines()
 	b64encoded_pubkey = base64.b64encode(readfile[0].strip().encode())
 	# print(b64encoded_pubkey)
@@ -72,10 +109,12 @@ def create_ec2_instance():
 	sec_groud_id = sec_group_info['SecurityGroups'][0]['GroupId'] 
 
 	print('[*] creating ec2 instance....')
+	print(f'[*] using imageid: {image_id} (Debianx64) for region: {REGION}')
 	created_instance = ec2.run_instances(InstanceType="t2.nano", MaxCount=1, MinCount=1, ImageId=image_id, KeyName='aws_rsa', SecurityGroupIds=[sec_groud_id])
 	InstanceId = created_instance['Instances'][0]['InstanceId']
 	print(f'[*] created instance id: {InstanceId}')
-	
+	open('instance_id.latest', 'w').write(InstanceId)
+	print('[*] wrote the InstanceId to file')
 	print(f'[*] sleeping 30 seconds waiting for initialization....')
 	countdown(30)
 	instance_info = ec2.describe_instances(InstanceIds=[InstanceId])
@@ -152,6 +191,11 @@ def create_openvpn_as(): # creates openvpn access server on the droplet and retr
 	ssh_client.close()
 
 
+def create_socks_server():
+	print('[*] opened ssh dynamic channel (127.0.0.1:1080), enjoy ')
+	system(f'ssh -o StrictHostKeyChecking=no admin@{public_ip_address} -i {getcwd()}/aws_rsa -N -4 -D 1080')		
+
+
 def connect_openvpn(): # connects the local machine to vps openvpn server
 	new_file = []
 	new_remote = f'remote {public_ip_address} 443'
@@ -161,6 +205,8 @@ def connect_openvpn(): # connects the local machine to vps openvpn server
 	for line in lines:
 		if 'remote' and '443' in line:
 			new_file.append(new_remote)
+			# new_file.append("dev-node Adapter")
+
 		else:
 			new_file.append(line)
 
@@ -178,17 +224,23 @@ def main():
 
 	if args.setup:
 		print('[*] initializating the one time setup...')
-		create_keys()
-		importsshkey()
-		setup_secgroups()
+		print(f'[*] setting up {REGION}')
+		if not args.sshkey:
+			create_keys()
+		if args.sshkey:
+			importsshkey()
+			setup_secgroups()
 
 
 	if not args.setup:
 		try:
 			create_ec2_instance()
-			create_openvpn_as()
-			connect_openvpn()
+			if not args.socks_server:
 
+				create_openvpn_as()
+				connect_openvpn()
+			if args.socks_server:
+				create_socks_server()
 			terminate_thread = threading.Thread(target=terminate_instance)
 			terminate_thread.start()
 		except KeyboardInterrupt:

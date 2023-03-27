@@ -179,7 +179,11 @@ SECOND:
 	- creates ssh keys that will be used in the future
 	- imports the keys into your aws account
 	- creates the needed security groups for the machine to work
-- once done you don't need to run the setup again (unless for a new aws account) 
+- OR `python3 create_as_server_aws.py --setup --region [AWS_REGION]` to setup a specific region, but you will have to the add region arg every time you run the script or just change the REGION variable in the script to your favorite region
+
+- if you have an existing ssh key you can run `python3 create_as_server_aws.py --setup --sshkey [YOUR_KEY.pub]` this will skip creating keys and will add your own keys to the region specified for future use
+
+- once done you don't need to run the setup again (unless for a new aws account or you want to set up a new region) 
 
 - the script automates the following (normal mode `python3 create_as_server_aws.py`):
 	- creates an aws t2.nano instance and configures it with the imported ssh-keys and the created security groups
@@ -194,6 +198,9 @@ SECOND:
 	- ec2_ak = AccessKey
 	- ec2_sak = SecurityAccessKeys 
 - how to get the keys?!  <a href="https://www.geeksforgeeks.org/launching-aws-ec2-instance-using-python/"> Geek For Geeks</a> have you covered ;) (AWS account with privileges) part
+
+- the aws script supports the second method described by an SSH dynamic tunnel SOCKS, here is how to configure:
+	- run `# python3 create_as_server_aws.py --socks_server` this will open a socks tunnel on (127.0.0.1:1080), now add this line to your (.ovpn) `socks 127.0.0.1 1080` and run the vpn 	 
 
 - the aws method doesn't have an (automate_destroy) so if something gone wrong you gonna need to log-in to your aws and terminate the instance yourself 
 

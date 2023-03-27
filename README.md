@@ -1,8 +1,10 @@
-# 2 ways of bypassing the udp vpn restriction and connecting to the THM network #
+# 3 ways of bypassing the udp vpn restriction and connecting to the THM network #
 
-- openvpn is used in both in methods
+***these ways can be used to bypass a lot of restriction types not just THM, THM is just my personal goal adapt it to anything you want***
 
-- requirments for the both methods:
+- openvpn access server is used in 2 of these methods
+
+- requirments for all methods:
 	- a vps located outside the country of restriction (a digital ocean droplet in san fransisco used in this project)
 	
 	- resources is not an issue here (use the cheapest possible machine ;) )
@@ -77,10 +79,10 @@ sure that:
 ``` 
 
 ------------                          ------------
-|  YOUR	   |    VPN TO YOUR VPS    	  |	  YOUR   |	 TO THM NETWORK
+|  YOUR	   |    VPN TO YOUR VPS       |	  YOUR   |    TO THM NETWORK
 |  LOCAL   |   =================>     |	  VPS    |   ===============>   THM-NETWORK
-|  MACHINE |						  |          |
-|----------|		   				  |----------|
+|  MACHINE |			      |          |
+|----------|		   	      |----------|
 ```
 
 ## Second Method ##  
@@ -100,15 +102,6 @@ sure that:
 
 ```
 
-FIRST:
-
-------------                          ------------
-|  YOUR	   |    VPN TO YOUR VPS    	  |	  YOUR   |	
-|  LOCAL   |   =================>     |	  VPS    |  
-|  MACHINE |						  |          |
-|----------|		   				  |----------|
-
-
 SECOND:
 
 ------------                                
@@ -119,9 +112,31 @@ SECOND:
 
 ```
 
+## Third Method (SOCKS) ##
+
+- the third method does not require openvpn to be installed on the VPS because it uses a SSH dynamic proxy tunnel, here is how to do it
+
+1 - spin up a VPS 
+
+2 - open a dynamic channel on 1080: `ssh user@vps -N -4 -D 1080`
+	
+	`-N`: don't drop in a shell
+	
+	`-4`: use ipv4
+	
+	`-D`: open dynamic channel on port 1080
+
+3 - you now have a socks proxy running on 127.0.0.1:1080, to use it open your (.ovpn) file and add this line under `remote x.x.x.x.x xxxx`  
+`socks 127.0.0.1 1080` <--- add this once added run your vpn and you should be all set 
+
+- this most useful if your trying to connect from windows hence windows uses METRIC for interfaces and routes and its a hotmess 😂  
+
+- look at the second method viusalizing to get an idea about this method they are similar
+
+----------------------------------------------------------------------------------------------------------
 
 
-- try both and see which one is more network efficient for you
+- try them and see which one is more network efficient for you
 
 
 - the main goal from this whole project is to get access to the THM network and do machines from my local machine using my own tools instead of using the attack box or an external vps to hack from and , It Worked !
@@ -132,7 +147,7 @@ SECOND:
 	
 	- it doesn't have my tools and configurations that i have on my own machine, setting it up would require exceptionally long time
 
-	- you can destroy the openvpn vps and build another one in minutes or even with an automation script so you don't get charged for the vps the time you are not using it ;), but destroying a for-hacking vps and building it again you guessed it, is no fun at all |:,  thats why we have automation right?!
+	- you can destroy the openvpn vps and build another one in minutes or even with an automation script so you don't get charged for the vps the time you are not using it ;), but destroying a for-hacking vps and building it again you guessed it, is no fun at all |:
 
 
 
@@ -199,10 +214,13 @@ SECOND:
 	- ec2_sak = SecurityAccessKeys 
 - how to get the keys?!  <a href="https://www.geeksforgeeks.org/launching-aws-ec2-instance-using-python/"> Geek For Geeks</a> have you covered ;) (AWS account with privileges) part
 
-- the aws script supports the second method described by an SSH dynamic tunnel SOCKS, here is how to configure:
+- the aws script supports the Third method described by opening an SSH dynamic tunnel SOCKS, here is how to configure:
 	- run `# python3 create_as_server_aws.py --socks_server` this will open a socks tunnel on (127.0.0.1:1080), now add this line to your (.ovpn) `socks 127.0.0.1 1080` and run the vpn 	 
 
-- the aws method doesn't have an (automate_destroy) so if something gone wrong you gonna need to log-in to your aws and terminate the instance yourself 
+- the aws_destroy.py will destroy the created instance if an error happened, make sure to:
+	- add your access keys to it like in create_as_server_aws.py 
+	- use the right (--region) when trying to terminate a created instance
+	- OR change the REGION variable for future easy use
 
 
 
@@ -220,3 +238,7 @@ SECOND:
 
 - FREE for 12 MONTH
 - 0.0069$/h after the first year 
+
+-----------------------------------------------------------------------------  <-- BOTTOM LINE
+
+- if there is any questions please reach out to me on Discord: (cpu#5416)

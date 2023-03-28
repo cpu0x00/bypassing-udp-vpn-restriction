@@ -7,7 +7,7 @@
 - requirments for all methods:
 	- a vps located outside the country of restriction (a digital ocean droplet in san fransisco used in this project)
 	
-	- resources is not an issue here (use the cheapest possible machine ;) )
+	- resources is not an issue here (use the cheapest possible machine or AWS free ties machines FREE for 1 YEAR ;) )
 
 
 
